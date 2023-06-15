@@ -1,0 +1,41 @@
+- hosts: localhost
+  tasks:
+    - name: Ensure PyMySQL is installed
+      pip:
+        name: PyMySQL
+        state: present
+
+- hosts: localhost
+  tasks:
+    - name: Create tables and insert data
+      mysql_query:
+        login_user: user
+        login_password: password
+        login_host: test-db.c3h7iveaco1o.ap-northeast-1.rds.amazonaws.com
+        login_db: testdb
+        query:
+          - CREATE TABLE IF NOT EXISTS testtable (id int DEFAULT NULL,name varchar(10) DEFAULT NULL,tel varchar(12) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+          - CREATE TABLE IF NOT EXISTS helloworld (helloworld varchar(30) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+          - CREATE TABLE IF NOT EXISTS todo (id bigint NOT NULL AUTO_INCREMENT,user_id varchar(20) DEFAULT NULL,memo varchar(500) DEFAULT NULL,deadline date DEFAULT NULL,status varchar(10) DEFAULT NULL,PRIMARY KEY (id)) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+          - INSERT INTO helloworld VALUES ('helloWorld from db')
+
+- hosts: webserver
+  become: yes
+  tasks:
+    - name: Install Java 17
+      package:
+        name: java-17-amazon-corretto
+        state: present
+
+    - name: Transfer the JAR file
+      copy:
+        src: /home/ec2-user/MyAnsible/resources/MySpringBootSample-0.0.1-SNAPSHOT.jar
+        dest: /home/ec2-user/springboot.jar
+        owner: ec2-user
+        group: ec2-user
+        mode: '0755'
+
+    - name: Run the JAR file
+      command:
+        cmd: java -jar /home/ec2-user/springboot.jar
+        creates: /home/ec2-user/log/app.log
